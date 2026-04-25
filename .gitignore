@@ -1,0 +1,8 @@
+# Raíz: secretos y artefactos comunes
+.env
+.env.*.local
+Thumbs.db
+Desktop.ini
+
+# Colección de agentes ajenos a este producto (no subir a GitHub)
+Agency-Agents-2026-main/
