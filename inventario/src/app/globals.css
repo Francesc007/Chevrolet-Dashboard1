@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+/* Tremor inyecta clases utilitarias desde node_modules; sin esto los colores
+   del DonutChart / leyendas no se generan y el gráfico se ve “vacío”. */
+@source "../../node_modules/@tremor/react/dist/**/*.js";
+
+/* Tema oscuro premium (Shadcn-style) — paleta azul marino, aqua, turquesa, azul rey */
+:root {
+  --background: 222 47% 5%;
+  --foreground: 210 40% 98%;
+  --card: 222 42% 8%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 42% 8%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 199 89% 48%;
+  --primary-foreground: 222 47% 5%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 33% 16%;
+  --input: 217 33% 16%;
+  --ring: 199 89% 48%;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(6, 182, 212, 0.35);
+  color: #fff;
+}
+
+/* Recharts (Tremor Area/Bar): quita el rectángulo blanco del SVG */
+.tremor-chart-transparent .recharts-responsive-container,
+.tremor-chart-transparent .recharts-wrapper {
+  background: transparent !important;
+}
+.tremor-chart-transparent .recharts-surface {
+  fill: transparent !important;
+}
+
+/* Pulso dorado solo al contorno del logo (sin caja: solo drop-shadow, sigue el canal alfa del PNG) */
+@keyframes logo-gold-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px rgba(234, 179, 8, 0.45))
+      drop-shadow(0 0 8px rgba(202, 138, 4, 0.28))
+      drop-shadow(0 0 1px rgba(254, 243, 199, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.65))
+      drop-shadow(0 0 18px rgba(202, 138, 4, 0.42))
+      drop-shadow(0 0 3px rgba(254, 249, 195, 0.55));
+  }
+}
+
+.animate-logo-gold-pulse {
+  animation: logo-gold-pulse 2.75s ease-in-out infinite;
+  /* Sin fondo ni recorte que parezca “marco” */
+  background: transparent;
+  box-shadow: none;
+}
+
+/*
+ * Formularios del panel (inventario / reseñas): rojo Chevrolet.
+ * Sin @layer / @apply: en Tailwind v4 las capas pueden dejar pasar el borde
+ * del tema (--primary cian) o utilidades sobre inputs.
+ */
+.panel-field {
+  margin-top: 0.25rem;
+  display: block;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(239 68 68 / 0.42);
+  background: linear-gradient(
+    to bottom,
+    rgb(69 10 10 / 0.32),
+    rgb(15 23 42 / 0.58)
+  );
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(248 113 113 / 0.3),
+    0 0 22px -8px rgb(185 28 28 / 0.35);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.panel-field::placeholder {
+  color: rgb(255 255 255 / 0.45);
+}
+
+.panel-field:focus,
+.panel-field:focus-visible {
+  border-color: rgb(248 113 113 / 0.72);
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(248 113 113 / 0.45),
+    0 0 0 3px rgb(239 68 68 / 0.38),
+    0 0 26px -6px rgb(185 28 28 / 0.4);
+}
+
+.panel-field:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Mayor especificidad que utilidades genéricas sobre inputs del tema */
+input.panel-field,
+select.panel-field,
+textarea.panel-field {
+  border-color: rgb(239 68 68 / 0.42);
+}
+
+input.panel-field:focus,
+input.panel-field:focus-visible,
+select.panel-field:focus,
+select.panel-field:focus-visible,
+textarea.panel-field:focus,
+textarea.panel-field:focus-visible {
+  border-color: rgb(248 113 113 / 0.72);
+}

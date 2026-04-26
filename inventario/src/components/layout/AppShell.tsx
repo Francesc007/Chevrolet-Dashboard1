@@ -1,0 +1,181 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Car,
+  Star,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { ChevroletMarkImage } from "@/components/brand/ChevroletMarkImage";
+import { cn } from "@/lib/utils";
+
+const nav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, iconStroke: 0 },
+  { href: "/inventory", label: "Inventario", icon: Car, iconStroke: 1.25 },
+  { href: "/reviews", label: "Reseñas", icon: Star, iconStroke: 0 },
+] as const;
+
+function NavLinks({
+  pathname,
+  onNavigate,
+  grow = true,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  /** En escritorio el nav ocupa espacio y empuja «Cerrar sesión» abajo; en el drawer móvil va en `false`. */
+  grow?: boolean;
+}) {
+  return (
+    <nav className={cn("flex flex-col gap-1 p-3", grow && "flex-1")}>
+      {nav.map((item) => {
+        const active = pathname === item.href;
+        const Icon = item.icon;
+        return (
+          <Link key={item.href} href={item.href} onClick={onNavigate}>
+            <span
+              className={cn(
+                "flex items-center gap-3.5 rounded-lg px-3 py-3 text-base transition-all duration-150 ease-out",
+                active
+                  ? "translate-y-px border border-red-400/45 bg-red-500/12 text-red-100 shadow-[inset_0_2px_10px_rgba(0,0,0,0.28)] dark:shadow-[inset_0_2px_12px_rgba(0,0,0,0.45)]"
+                  : "border border-transparent text-red-200/55 hover:bg-red-950/35 hover:text-red-50 active:translate-y-px active:shadow-[inset_0_2px_8px_rgba(0,0,0,0.12)] dark:active:shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)]",
+              )}
+            >
+              <Icon
+                className="h-5 w-5 shrink-0 opacity-95"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth={item.iconStroke}
+              />
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
+  const closeMobile = () => setMobileOpen(false);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Barra superior móvil: logo centrado + hamburguesa */}
+      <header className="fixed inset-x-0 top-0 z-40 flex min-h-[calc(4.25rem+env(safe-area-inset-top))] items-center justify-center border-b border-red-600/35 bg-card/95 pt-[env(safe-area-inset-top)] shadow-[0_8px_32px_-12px_rgba(185,28,28,0.2)] ring-1 ring-red-600/25 backdrop-blur-xl md:hidden">
+        <ChevroletMarkImage
+          width={280}
+          height={64}
+          className="h-[60px] max-w-[min(78vw,300px)]"
+          priority
+        />
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl border border-red-500/45 bg-red-500/10 text-red-100 shadow-inner transition hover:bg-red-500/18"
+          aria-expanded={mobileOpen}
+          aria-label="Abrir menú"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+      </header>
+
+      {/* Drawer móvil */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+            aria-label="Cerrar menú"
+            onClick={closeMobile}
+          />
+          <aside className="absolute right-0 top-3 max-h-[min(32rem,calc(100dvh-1.5rem))] w-[min(20rem,88vw)] overflow-y-auto rounded-l-2xl border border-red-600/35 border-r-0 bg-card/98 shadow-[-8px_0_40px_rgba(0,0,0,0.35)] ring-1 ring-red-600/25 backdrop-blur-xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-red-600/25 px-4 py-3">
+              <span className="text-sm font-semibold tracking-tight text-red-100">
+                Menú
+              </span>
+              <button
+                type="button"
+                onClick={closeMobile}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-600/40 text-red-200/85 transition hover:bg-red-950/35 hover:text-red-50"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <NavLinks pathname={pathname} onNavigate={closeMobile} grow={false} />
+            <div className="shrink-0 border-t border-red-600/25 p-3">
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobile();
+                  void logout();
+                }}
+                className={cn(
+                  "flex w-full items-center gap-3.5 rounded-lg px-3 py-3 text-left text-base transition-colors",
+                  "text-red-200/75 hover:bg-red-950/30 hover:text-red-50",
+                )}
+              >
+                <LogOut className="h-5 w-5 shrink-0 opacity-90" />
+                Cerrar sesión
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Sidebar escritorio */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-red-600/40 bg-card/95 shadow-[4px_0_36px_-6px_rgba(185,28,28,0.22),inset_0_0_60px_-30px_rgba(220,38,38,0.07)] ring-1 ring-red-600/30 backdrop-blur-xl md:flex">
+        <div className="flex items-center justify-center border-b border-red-600/25 px-4 py-6">
+          <ChevroletMarkImage
+            width={360}
+            height={84}
+            className="mx-auto h-[100px] max-w-full"
+            priority
+          />
+        </div>
+        <NavLinks pathname={pathname} />
+        <div className="border-t border-red-600/25 p-3">
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className={cn(
+              "flex w-full items-center gap-3.5 rounded-lg px-3 py-3 text-left text-base transition-colors",
+              "text-red-200/75 hover:bg-red-950/30 hover:text-red-50",
+            )}
+          >
+            <LogOut className="h-5 w-5 shrink-0 opacity-90" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex min-h-screen flex-1 flex-col pt-[calc(4.25rem+env(safe-area-inset-top))] md:ml-64 md:pt-0">
+        <main className="flex-1 px-4 py-5 sm:px-6 md:py-8 lg:px-10">{children}</main>
+      </div>
+    </div>
+  );
+}
