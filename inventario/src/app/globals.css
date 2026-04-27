@@ -49,8 +49,11 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --radius-lg: var(--radius);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* next/font en layout.tsx: --font-inter, --font-roboto-mono */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), ui-monospace, monospace;
+  --font-inter: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-roboto-mono: var(--font-roboto-mono), ui-monospace, monospace;
 }
 
 .dark {
@@ -60,7 +63,7 @@
 body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Evita scroll horizontal por halos/filtros (logo) o tablas en móvil */
