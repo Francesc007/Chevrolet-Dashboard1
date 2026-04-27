@@ -18,14 +18,28 @@ export function normalizeInventoryPublicUrl(
   );
 }
 
+/**
+ * Limpia `gallery_urls` desde Postgres (nulls en el array, strings vacíos, tipos raros).
+ */
+export function sanitizeGalleryUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const t = item.trim();
+    if (!t) continue;
+    const n = normalizeInventoryPublicUrl(t);
+    if (n != null && n !== "") out.push(n);
+  }
+  return out;
+}
+
 export function normalizeCarImageUrls<T extends { cover_image_url: string | null; gallery_urls: string[] }>(
   car: T,
 ): T {
   return {
     ...car,
     cover_image_url: normalizeInventoryPublicUrl(car.cover_image_url),
-    gallery_urls: (car.gallery_urls ?? []).map(
-      (u) => normalizeInventoryPublicUrl(u) ?? u,
-    ),
+    gallery_urls: sanitizeGalleryUrls(car.gallery_urls),
   };
 }

@@ -26,7 +26,11 @@
       ...car,
       cover_image_url: normalizeUrl(car.cover_image_url) ?? null,
       gallery_urls: Array.isArray(car.gallery_urls)
-        ? car.gallery_urls.map(normalizeUrl)
+        ? car.gallery_urls
+            .map(normalizeUrl)
+            .filter(function (u) {
+              return u && typeof u === "string" && String(u).trim();
+            })
         : [],
     };
   }

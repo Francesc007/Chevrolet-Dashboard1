@@ -7,6 +7,7 @@ import { Pencil, Plus, Trash2, Upload } from "lucide-react";
 import type { CarRow, CarCondition } from "@/types";
 import { compressImageForUpload } from "@/lib/compress-image-upload";
 import { CAR_GALLERY_MAX_IMAGES } from "@/lib/car-gallery";
+import { sanitizeGalleryUrls } from "@/lib/storage-inventory";
 import { cn, formatCurrency, formatIntegerThousands } from "@/lib/utils";
 
 const defaultYear = () => new Date().getFullYear();
@@ -68,6 +69,51 @@ const emptyForm = () => ({
   gallery_urls: [] as string[],
 });
 
+function InventoryGalleryThumb({
+  url,
+  onRemove,
+}: {
+  url: string;
+  onRemove: () => void;
+}) {
+  const [broken, setBroken] = useState(false);
+  if (broken) {
+    return (
+      <div className="relative flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-white/20 bg-zinc-900/80 px-1 text-center text-[10px] leading-tight text-white/45 ring-1 ring-white/5">
+        Imagen no disponible
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute right-1 top-1 rounded bg-black/55 p-0.5 text-red-400 backdrop-blur-sm transition-colors hover:bg-red-600/85 hover:text-white"
+          aria-label="Quitar imagen"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-white/10 bg-zinc-900/80 ring-1 ring-white/5">
+      <Image
+        src={url}
+        alt=""
+        fill
+        className="object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.05]"
+        sizes="(max-width:640px) 33vw, 120px"
+        onError={() => setBroken(true)}
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute right-1 top-1 rounded bg-black/55 p-0.5 text-red-400 backdrop-blur-sm transition-colors hover:bg-red-600/85 hover:text-white"
+        aria-label="Quitar imagen"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 export function InventoryClient() {
   const [cars, setCars] = useState<CarRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +166,7 @@ export function InventoryClient() {
       power_hp: c.power_hp ?? "",
       condition: c.condition,
       cover_image_url: c.cover_image_url ?? "",
-      gallery_urls: [...(c.gallery_urls ?? [])],
+      gallery_urls: sanitizeGalleryUrls(c.gallery_urls),
     });
     setModal("edit");
   }
@@ -568,26 +614,11 @@ export function InventoryClient() {
                   {form.gallery_urls.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {form.gallery_urls.map((url, idx) => (
-                        <div
-                          key={`${url}-${idx}`}
-                          className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-white/10 bg-zinc-900/80 ring-1 ring-white/5"
-                        >
-                          <Image
-                            src={url}
-                            alt=""
-                            fill
-                            className="object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.05]"
-                            sizes="(max-width:640px) 33vw, 120px"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryAt(idx)}
-                            className="absolute right-1 top-1 rounded bg-black/55 p-0.5 text-red-400 backdrop-blur-sm transition-colors hover:bg-red-600/85 hover:text-white"
-                            aria-label="Quitar imagen"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
+                        <InventoryGalleryThumb
+                          key={`${idx}-${url.slice(0, 48)}`}
+                          url={url}
+                          onRemove={() => removeGalleryAt(idx)}
+                        />
                       ))}
                     </div>
                   )}

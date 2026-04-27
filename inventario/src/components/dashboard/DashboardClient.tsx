@@ -146,6 +146,29 @@ function showInInteractionsByModelList(row: MetricsPayload["byCar"][number]): bo
   return Date.now() - t <= REMOVED_MODEL_GRACE_MS;
 }
 
+/** Hora local segura para ISO de eventos (evita Invalid Date si falta o viene mal el valor). */
+function safeEventTimeLabel(
+  iso: string | null | undefined,
+  timeZone: string,
+): { label: string; dateTime: string | undefined } {
+  if (iso == null || typeof iso !== "string" || !iso.trim()) {
+    return { label: "—", dateTime: undefined };
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return { label: "—", dateTime: undefined };
+  }
+  return {
+    label: d.toLocaleTimeString("es-MX", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+    dateTime: iso.trim(),
+  };
+}
+
 /** Etiqueta compacta dd/mm/aa a partir de YYYY-MM-DD (sin depender de la TZ del navegador). */
 function formatDdMmYy(ymd: string): string {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -926,32 +949,33 @@ export function DashboardClient() {
             ) : (
               <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                 <AnimatePresence initial={false}>
-                  {(data?.recentEvents ?? []).map((e) => (
-                    <motion.div
-                      key={e.id}
-                      initial={false}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-red-800/45 bg-muted/30 px-3 py-2 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-white">
-                          {e.activityLabel ?? e.eventType ?? "Evento"}
-                        </p>
-                      </div>
-                      <time
-                        className="shrink-0 text-white/60"
-                        dateTime={e.createdAt}
+                  {(data?.recentEvents ?? []).map((e) => {
+                    const t = safeEventTimeLabel(
+                      e.createdAt,
+                      METRICS_TIMEZONE,
+                    );
+                    return (
+                      <motion.div
+                        key={e.id}
+                        initial={false}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-red-800/45 bg-muted/30 px-3 py-2 text-xs"
                       >
-                        {new Date(e.createdAt).toLocaleTimeString("es-MX", {
-                          timeZone: METRICS_TIMEZONE,
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        })}
-                      </time>
-                    </motion.div>
-                  ))}
+                        <div className="min-w-0">
+                          <p className="font-medium text-white">
+                            {e.activityLabel ?? e.eventType ?? "Evento"}
+                          </p>
+                        </div>
+                        <time
+                          className="shrink-0 text-white/60"
+                          dateTime={t.dateTime}
+                        >
+                          {t.label}
+                        </time>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}
