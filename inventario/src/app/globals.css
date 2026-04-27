@@ -77,26 +77,64 @@ body {
   fill: transparent !important;
 }
 
-/* Pulso dorado solo al contorno del logo (sin caja: solo drop-shadow, sigue el canal alfa del PNG) */
-@keyframes logo-gold-pulse {
+/*
+ * Resplandor rojo acorde a la figura del PNG:
+ * - Capa trasera: misma imagen con blur + drop-shadow (sigue el canal alfa).
+ * - Capa frontal: halo fino en el borde con drop-shadow.
+ */
+@keyframes logo-red-aura {
   0%,
   100% {
-    filter: drop-shadow(0 0 2px rgba(234, 179, 8, 0.45))
-      drop-shadow(0 0 8px rgba(202, 138, 4, 0.28))
-      drop-shadow(0 0 1px rgba(254, 243, 199, 0.35));
+    opacity: 0.38;
+    transform: scale(1.04);
+    filter: blur(4px) drop-shadow(0 0 3px rgba(239, 68, 68, 0.55))
+      drop-shadow(0 0 10px rgba(220, 38, 38, 0.32))
+      drop-shadow(0 0 22px rgba(185, 28, 28, 0.16));
   }
   50% {
-    filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.65))
-      drop-shadow(0 0 18px rgba(202, 138, 4, 0.42))
-      drop-shadow(0 0 3px rgba(254, 249, 195, 0.55));
+    opacity: 0.62;
+    transform: scale(1.09);
+    filter: blur(8px) drop-shadow(0 0 6px rgba(248, 113, 113, 0.58))
+      drop-shadow(0 0 18px rgba(220, 38, 38, 0.4))
+      drop-shadow(0 0 32px rgba(127, 29, 29, 0.2));
   }
 }
 
-.animate-logo-gold-pulse {
-  animation: logo-gold-pulse 2.75s ease-in-out infinite;
-  /* Sin fondo ni recorte que parezca “marco” */
+.animate-logo-red-aura {
+  animation: logo-red-aura 2.4s ease-in-out infinite;
   background: transparent;
   box-shadow: none;
+  transform-origin: center center;
+  will-change: filter, opacity, transform;
+}
+
+@keyframes logo-red-edge {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 1px rgba(254, 202, 202, 0.32))
+      drop-shadow(0 0 5px rgba(220, 38, 38, 0.26))
+      drop-shadow(0 0 12px rgba(185, 28, 28, 0.12));
+  }
+  50% {
+    filter: drop-shadow(0 0 2px rgba(254, 226, 226, 0.45))
+      drop-shadow(0 0 9px rgba(239, 68, 68, 0.38))
+      drop-shadow(0 0 18px rgba(185, 28, 28, 0.22));
+  }
+}
+
+.animate-logo-red-edge {
+  animation: logo-red-edge 2.4s ease-in-out infinite;
+  background: transparent;
+  box-shadow: none;
+  will-change: filter;
+}
+
+/* Alias por si algún componente aún usa el nombre anterior */
+.animate-logo-red-pulse {
+  animation: logo-red-edge 2.4s ease-in-out infinite;
+  background: transparent;
+  box-shadow: none;
+  will-change: filter;
 }
 
 /*

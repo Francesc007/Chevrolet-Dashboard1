@@ -35,7 +35,8 @@ type EventRow = Record<string, unknown> & {
   vehicle_name?: string | null;
 };
 
-const GENERAL_LABEL = "Consulta General";
+/** Etiqueta canónica en API/UI (WA flotante + contacto). */
+const GENERAL_LABEL = "Consulta general";
 
 function normalizeVehicleLabel(s: string): string {
   return s.trim().replace(/\s+/g, " ");
@@ -54,12 +55,35 @@ function carLabelFromEvent(ev: EventRow): string | null {
   return null;
 }
 
+/** Misma clave para fusionar WA flotante, contacto y variantes de etiqueta. */
+function consultaLabelKey(name: string): string {
+  return normalizeVehicleLabel(
+    name
+      .replace(/[\u2013\u2014]/g, " ")
+      .replace(/·/g, " "),
+  )
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function isConsultaGeneral(name: string | null): boolean {
   if (!name) return false;
+  const n = consultaLabelKey(name);
+  if (n.includes("consulta general") || n.includes("contacto general")) {
+    return true;
+  }
   return (
-    normalizeVehicleLabel(name).toLowerCase() ===
-    GENERAL_LABEL.toLowerCase()
+    n === "wa" ||
+    n === "whatsapp" ||
+    n === "wa consulta general" ||
+    n === "wa | consulta general"
   );
+}
+
+/** Filas que no deben aparecer en desglose por modelo / actividad reciente (p. ej. pruebas). */
+function isExcludedFromModelBreakdown(displayLabel: string): boolean {
+  return normalizeVehicleLabel(displayLabel).toLowerCase() === "test";
 }
 
 export type MetricsRangeParam = "7d" | "today";
@@ -224,6 +248,7 @@ export async function GET(request: NextRequest) {
     );
 
     type CarAgg = {
+      mapKey: string;
       carId: string | null;
       /** Texto mostrado = valor de car_label en BD (normalizado). */
       carLabel: string;
@@ -298,11 +323,8 @@ export async function GET(request: NextRequest) {
       const line = b.displayLabel;
       if (t === "submit_lead") return `Lead · ${line}`;
       if (t === "click_whatsapp") {
-        if (
-          b.mapKey === "__consulta_general__" ||
-          line === GENERAL_LABEL
-        ) {
-          return "WA General";
+        if (b.mapKey === "__consulta_general__" || line === GENERAL_LABEL) {
+          return "WA | Consulta general";
         }
         return `Solicitar información · ${line}`;
       }
@@ -311,15 +333,28 @@ export async function GET(request: NextRequest) {
       return line;
     }
 
+    /** Último evento por bucket (todos los registros) para modelos ya no en inventario. */
+    const lastInteractionByMapKey = new Map<string, string>();
+    for (const e of events) {
+      const b = resolveBucket(e);
+      if (isExcludedFromModelBreakdown(b.displayLabel)) continue;
+      const cur = lastInteractionByMapKey.get(b.mapKey);
+      if (!cur || e.created_at > cur) {
+        lastInteractionByMapKey.set(b.mapKey, e.created_at);
+      }
+    }
+
     const perCar = new Map<string, CarAgg>();
 
     for (const e of scopedEvents) {
       const b = resolveBucket(e);
       const t = normalizeEventType(e.event_type);
       if (!t) continue;
+      if (isExcludedFromModelBreakdown(b.displayLabel)) continue;
 
       if (!perCar.has(b.mapKey)) {
         perCar.set(b.mapKey, {
+          mapKey: b.mapKey,
           carId: b.carId,
           carLabel: b.displayLabel,
           brand: b.brand,
@@ -334,9 +369,21 @@ export async function GET(request: NextRequest) {
       row.total += 1;
     }
 
-    const byCar = [...perCar.values()].sort((a, b) => b.total - a.total);
+    const byCar = [...perCar.values()]
+      .sort((a, b) => b.total - a.total)
+      .map((row) => {
+        const { mapKey, ...rest } = row;
+        return {
+          ...rest,
+          lastInteractionAt: lastInteractionByMapKey.get(mapKey) ?? "",
+        };
+      });
 
     const recentEvents = [...scopedEvents]
+      .filter((e) => {
+        const b = resolveBucket(e);
+        return !isExcludedFromModelBreakdown(b.displayLabel);
+      })
       .sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),

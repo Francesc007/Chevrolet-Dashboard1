@@ -23,18 +23,43 @@ import { METRICS_TIMEZONE } from "@/lib/metrics-timezone";
 import { cn, formatIntegerThousands } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const CONSULTA_GENERAL_LABEL = "Consulta General";
+/** Debe coincidir con `GENERAL_LABEL` en `/api/metrics`. */
+const CONSULTA_GENERAL_LABEL = "Consulta general";
+const WA_CONSULTA_GENERAL_TITLE = "WA | Consulta general";
+
+function consultaLabelKeyClient(name: string): string {
+  return name
+    .trim()
+    .replace(/[\u2013\u2014]/g, " ")
+    .replace(/·/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+/** Misma lógica que `isConsultaGeneral` en `/api/metrics` (filas a fusionar). */
+function isConsultaGeneralRow(row: { carLabel: string }): boolean {
+  const n = consultaLabelKeyClient(row.carLabel);
+  if (n.includes("consulta general") || n.includes("contacto general")) {
+    return true;
+  }
+  return (
+    n === "wa" ||
+    n === "whatsapp" ||
+    n === "wa consulta general" ||
+    n === "wa | consulta general"
+  );
+}
 
 /** Vistas, Form y Leads: sin mostrar 0 en celdas del detalle. */
 function detailColHideZero(n: number): string | number {
   return n === 0 ? "" : n;
 }
 
-/** Consulta General: total coherente con lo mostrado (vistas + WA; sin form/leads). */
+/** Un solo contador para la fila WA | Consulta general: clics WhatsApp combinados. */
 function consultaGeneralDisplayedTotal(row: {
   counts: Record<TrackEventType, number>;
 }): number {
-  return row.counts.view_car + row.counts.click_whatsapp;
+  return row.counts.click_whatsapp;
 }
 
 type MetricsRange = "7d" | "today";
@@ -54,6 +79,8 @@ type MetricsPayload = {
     model: string;
     total: number;
     counts: Record<TrackEventType, number>;
+    /** Último evento del bucket (todas las filas); para modelos fuera de inventario. */
+    lastInteractionAt: string;
   }[];
   recentEvents: {
     id: string;
@@ -66,6 +93,58 @@ type MetricsPayload = {
   }[];
   generatedAt: string;
 };
+
+function mergeConsultaRows(
+  rows: MetricsPayload["byCar"],
+): MetricsPayload["byCar"][number] | null {
+  if (rows.length === 0) return null;
+  const empty: Record<TrackEventType, number> = {
+    view_car: 0,
+    click_whatsapp: 0,
+    click_form: 0,
+    submit_lead: 0,
+  };
+  const merged = rows.reduce(
+    (acc, r) => ({
+      total: acc.total + r.total,
+      counts: {
+        view_car: acc.counts.view_car + r.counts.view_car,
+        click_whatsapp: acc.counts.click_whatsapp + r.counts.click_whatsapp,
+        click_form: acc.counts.click_form + r.counts.click_form,
+        submit_lead: acc.counts.submit_lead + r.counts.submit_lead,
+      },
+      lastInteractionAt:
+        !acc.lastInteractionAt || r.lastInteractionAt > acc.lastInteractionAt
+          ? r.lastInteractionAt
+          : acc.lastInteractionAt,
+    }),
+    {
+      total: 0,
+      counts: { ...empty },
+      lastInteractionAt: "",
+    },
+  );
+  return {
+    carId: null,
+    carLabel: CONSULTA_GENERAL_LABEL,
+    brand: "",
+    model: CONSULTA_GENERAL_LABEL,
+    total: merged.total,
+    counts: merged.counts,
+    lastInteractionAt: merged.lastInteractionAt,
+  };
+}
+
+const REMOVED_MODEL_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** Modelos sin fila en inventario (p. ej. auto eliminado): solo en la lista de barras si hubo actividad en los últimos 3 días. */
+function showInInteractionsByModelList(row: MetricsPayload["byCar"][number]): boolean {
+  if (isConsultaGeneralRow(row)) return true;
+  if (row.carId) return true;
+  const t = new Date(row.lastInteractionAt).getTime();
+  if (Number.isNaN(t)) return false;
+  return Date.now() - t <= REMOVED_MODEL_GRACE_MS;
+}
 
 /** Etiqueta compacta dd/mm/aa a partir de YYYY-MM-DD (sin depender de la TZ del navegador). */
 function formatDdMmYy(ymd: string): string {
@@ -123,14 +202,14 @@ const MAIN_METRICS_PIE_COLORS = [
   "#22c55e",
   "#5b21b6",
   "#f59e0b",
-  "#dc2626",
+  "#06b6d4",
 ] as const;
 
 const MAIN_METRICS_PIE_LEGEND_DOT = [
   "bg-[#22c55e]",
   "bg-[#5b21b6]",
   "bg-[#f59e0b]",
-  "bg-[#dc2626]",
+  "bg-[#06b6d4]",
 ] as const;
 
 /** Escala del eje Y del área (interacciones/día): máximo redondeado según los datos. */
@@ -539,11 +618,13 @@ export function DashboardClient() {
 
   const TOP_MODELS_MAX = 8;
   const rawByCar = data?.byCar ?? [];
-  const consultaForTop = rawByCar.filter(
-    (r) => r.carLabel === CONSULTA_GENERAL_LABEL,
+  const consultaMergedRow = mergeConsultaRows(
+    rawByCar.filter(isConsultaGeneralRow),
   );
-  const vehiclesForTop = rawByCar.filter(
-    (r) => r.carLabel !== CONSULTA_GENERAL_LABEL,
+  const consultaForTop = consultaMergedRow ? [consultaMergedRow] : [];
+  const vehiclesRaw = rawByCar.filter((r) => !isConsultaGeneralRow(r));
+  const vehiclesForTop = vehiclesRaw.filter((r) =>
+    showInInteractionsByModelList(r),
   );
   const sortedVehiclesForTop = [...vehiclesForTop].sort(
     (a, b) => b.total - a.total,
@@ -560,18 +641,13 @@ export function DashboardClient() {
     })),
     ...consultaForTop.map((c) => ({
       id: c.carId ?? `lbl-${c.carLabel}`,
-      name: `WA · ${c.carLabel}`.slice(0, 56),
+      name: WA_CONSULTA_GENERAL_TITLE.slice(0, 56),
       interacciones: consultaGeneralDisplayedTotal(c),
     })),
   ];
 
-  const detailRaw = data?.byCar ?? [];
-  const detailConsulta = detailRaw.filter(
-    (r) => r.carLabel === CONSULTA_GENERAL_LABEL,
-  );
-  const detailVehicles = detailRaw.filter(
-    (r) => r.carLabel !== CONSULTA_GENERAL_LABEL,
-  );
+  const detailConsulta = consultaForTop;
+  const detailVehicles = vehiclesRaw;
   const detailTableRows = [
     ...[...detailVehicles].sort((a, b) => b.total - a.total),
     ...detailConsulta,
@@ -923,8 +999,7 @@ export function DashboardClient() {
               {detailTableRows.map((row) => {
                 const leads =
                   row.counts.click_whatsapp + row.counts.submit_lead;
-                const isConsultaGeneral =
-                  row.carLabel === CONSULTA_GENERAL_LABEL;
+                const isConsultaGeneral = isConsultaGeneralRow(row);
                 return (
                   <tr
                     key={
@@ -935,7 +1010,7 @@ export function DashboardClient() {
                   >
                     <td className="py-3 pr-4 text-left">
                       {isConsultaGeneral
-                        ? `WA · ${row.carLabel}`
+                        ? WA_CONSULTA_GENERAL_TITLE
                         : row.carLabel}
                     </td>
                     <td className="py-3 px-2 text-center tabular-nums">

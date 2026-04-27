@@ -18,8 +18,8 @@ const EVENTS: {
   {
     type: "whatsapp_click",
     label: "WA flotante (general)",
-    description: 'Registra whatsapp_click + vehicle "Consulta General"',
-    vehicleName: "Consulta General",
+    description: 'Registra whatsapp_click + vehicle "Consulta general"',
+    vehicleName: "Consulta general",
   },
   {
     type: "whatsapp_click",
@@ -76,7 +76,7 @@ export function LandingTrackButtons() {
         </label>
         <input
           type="text"
-          placeholder='Ej. Mercedes Benz EQS · o "Consulta General"'
+          placeholder='Ej. Mercedes Benz EQS · o "Consulta general"'
           value={vehicleLabel}
           onChange={(e) => setVehicleLabel(e.target.value)}
           className="mt-1 w-full rounded-xl border border-white/[0.08] bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600"

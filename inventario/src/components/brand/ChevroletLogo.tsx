@@ -21,7 +21,7 @@ export function ChevroletLogo({
     <span
       className={cn(
         "inline-flex max-w-full flex-col items-center justify-center gap-0.5 overflow-hidden leading-none",
-        "animate-logo-gold-pulse rounded-lg px-1 py-0.5",
+        "animate-logo-red-pulse rounded-lg px-1 py-0.5",
         className,
       )}
       style={{ width, minHeight: height }}

@@ -48,7 +48,7 @@
    * @param {{ eventType: string, carId?: string|null, carLabel?: string|null, vehicleName?: string|null, metadata?: object, trackKey?: string }} opts
    *   eventType: "view_car" | "whatsapp_click" | "form_submit" | … (ver API /api/track)
    *   carId: UUID cuando aplique (ficha de auto).
-   *   carLabel: preferido — texto que guarda la BD en car_label (Consulta General, Marca Modelo, etc.).
+   *   carLabel: preferido — texto que guarda la BD en car_label (p. ej. Consulta general, Marca Modelo).
    *   vehicleName: alias de carLabel si no envías carLabel.
    */
   function track(apiBase, opts) {
