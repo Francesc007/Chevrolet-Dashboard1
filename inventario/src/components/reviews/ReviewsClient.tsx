@@ -231,19 +231,19 @@ export function ReviewsClient() {
             <motion.article
               key={rv.id}
               initial={false}
-              className="group flex min-w-0 items-stretch gap-4 overflow-hidden rounded-2xl border border-red-600/45 bg-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(220,38,38,0.38),0_0_28px_-10px_rgba(185,28,28,0.22),inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-red-500/32"
+              className="group flex min-w-0 flex-col items-stretch gap-4 overflow-hidden rounded-2xl border border-red-600/45 bg-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(220,38,38,0.38),0_0_28px_-10px_rgba(185,28,28,0.22),inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-red-500/32 sm:flex-row"
             >
-              <div className="relative w-32 shrink-0 self-stretch min-h-[7.5rem] overflow-hidden rounded-xl bg-zinc-900">
+              <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl bg-zinc-900 sm:aspect-auto sm:h-auto sm:w-32 sm:min-h-[7.5rem] sm:self-stretch">
                 {rv.photo_url ? (
                   <Image
                     src={rv.photo_url}
                     alt={rv.name}
                     fill
                     className="object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.05]"
-                    sizes="128px"
+                    sizes="(max-width: 640px) 100vw, 128px"
                   />
                 ) : (
-                  <div className="flex h-full min-h-[7.5rem] items-center justify-center text-[10px] text-white/55">
+                  <div className="flex min-h-[8rem] flex-1 items-center justify-center text-[10px] text-white/55 sm:min-h-0 sm:h-full">
                     Sin foto
                   </div>
                 )}
@@ -304,7 +304,7 @@ export function ReviewsClient() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#0c0e18] p-5 shadow-2xl sm:p-6"
+              className="max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-white/[0.08] bg-[#0c0e18] p-5 shadow-2xl sm:p-6"
             >
               <h3 className="text-lg font-semibold text-white">
                 {editingId ? "Editar reseña" : "Nueva reseña"}

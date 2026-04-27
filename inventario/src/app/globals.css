@@ -63,6 +63,11 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Evita scroll horizontal por halos/filtros (logo) o tablas en móvil */
+html {
+  overflow-x: clip;
+}
+
 ::selection {
   background: rgba(6, 182, 212, 0.35);
   color: #fff;

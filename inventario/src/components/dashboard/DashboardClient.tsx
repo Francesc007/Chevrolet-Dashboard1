@@ -697,7 +697,7 @@ export function DashboardClient() {
   const mainMetricsPieTotal = mainMetricsPie.reduce((s, r) => s + r.value, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 text-center sm:text-left">
           <h1 className="text-2xl font-semibold tracking-wide text-white uppercase">
@@ -1078,7 +1078,7 @@ function StatCard({
             </p>
             <p
               key={pulseKey + title}
-              className="mt-2 text-3xl font-semibold tabular-nums text-white"
+              className="mt-2 text-2xl font-semibold tabular-nums text-white sm:text-3xl"
             >
               {formatIntegerThousands(value)}
             </p>

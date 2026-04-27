@@ -83,7 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       {/* Barra superior móvil: logo centrado + hamburguesa */}
       <header className="fixed inset-x-0 top-0 z-40 flex min-h-[calc(4.25rem+env(safe-area-inset-top))] items-center justify-center border-b border-red-600/35 bg-card/95 pt-[env(safe-area-inset-top)] shadow-[0_8px_32px_-12px_rgba(185,28,28,0.2)] ring-1 ring-red-600/25 backdrop-blur-xl md:hidden">
         <ChevroletMarkImage
@@ -173,8 +173,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col pt-[calc(4.25rem+env(safe-area-inset-top))] md:ml-64 md:pt-0">
-        <main className="flex-1 px-4 py-5 sm:px-6 md:py-8 lg:px-10">{children}</main>
+      <div className="flex min-h-dvh flex-1 flex-col pt-[calc(4.25rem+env(safe-area-inset-top))] md:ml-64 md:pt-0">
+        <main className="flex-1 min-w-0 px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 md:py-8 lg:px-10">
+          {children}
+        </main>
       </div>
     </div>
   );
