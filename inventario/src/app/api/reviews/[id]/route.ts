@@ -92,11 +92,12 @@ export async function PATCH(request: Request, { params }: Params) {
 
   try {
     const supabase = createAdminClient();
+    /** Solo columnas del esquema actual en Supabase (`model`, `year`). Las columnas
+     * `vehicle_model` / `vehicle_year` son opcionales (migración 007); no listarlas aquí
+     * para no fallar si no existen. */
     const { data: existing, error: existErr } = await supabase
       .from("reviews")
-      .select(
-        "id, model, year, vehicle_model, vehicle_year",
-      )
+      .select("id, model, year")
       .eq("id", id)
       .maybeSingle();
 
@@ -128,13 +129,13 @@ export async function PATCH(request: Request, { params }: Params) {
           ? patch.vehicle_model
           : patch.model !== undefined
             ? patch.model
-            : ex?.vehicle_model ?? ex?.model ?? null;
+            : ex?.model ?? null;
       const yearIn =
         patch.year !== undefined
           ? patch.year
           : patch.vehicle_year !== undefined
             ? patch.vehicle_year
-            : ex?.year ?? ex?.vehicle_year ?? null;
+            : ex?.year ?? null;
       const merged = resolveReviewVehicleFields({
         model: modelIn,
         vehicle_model: modelIn,
@@ -170,13 +171,13 @@ export async function PATCH(request: Request, { params }: Params) {
           ? yearPatch
           : vehicle_year !== undefined
             ? vehicle_year
-            : ex?.year ?? ex?.vehicle_year ?? null;
+            : ex?.year ?? null;
       const m =
         vehicle_model !== undefined
           ? vehicle_model
           : modelPatch !== undefined
             ? modelPatch
-            : ex?.vehicle_model ?? ex?.model;
+            : ex?.model;
       const legacyUpdate = omitUndefined({
         ...rest,
         model: legacyModelLine(m ?? null, y ?? null) ?? m ?? null,
